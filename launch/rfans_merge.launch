@@ -1,0 +1,19 @@
+<!-- -*- mode: XML -*- args="1" -->
+
+<launch>
+
+
+<arg name="bag_path" value="/home/howstar/pclData/rfans_double2.bag" />
+
+
+<!-- -->
+<node pkg="rfans_merge" type="rfans_merge_node" name="rfans_merge_node" />
+
+
+<node pkg="rviz" type="rviz" name="rviz" args="-d $(find rfans_merge)/merge_result.rviz" required="true" />
+
+
+<node pkg="rosbag" type="play" name="play" args="-l $(arg bag_path)" />
+
+
+</launch>

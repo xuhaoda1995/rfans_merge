@@ -6,7 +6,6 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /cloud_32l1/Status1
         - /Cloud_merge1
       Splitter Ratio: 0.5
     Tree Height: 290
@@ -28,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: cloud_16l
+    SyncSource: Cloud_merge
 Preferences:
   PromptSaveOnExit: true
 Visualization Manager:
@@ -167,7 +166,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 11.773208618164062
+      Distance: 16.981304168701172
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
