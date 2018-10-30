@@ -22,7 +22,7 @@ extern const float laser_vangle32[32];
 
 extern const double g_LiDAR_pos32[6];
 extern const double g_LiDAR_pos16[6];
-extern const double g_LiDAR_16_2_32[6];
+extern double g_LiDAR_16_2_32[6];
 
 namespace global_param
 {
@@ -45,14 +45,14 @@ struct PointSrc
     }
 };
 
-inline int get_idx(int idx_beam, int idx_sweep)
+inline int getCloudIndex(int idx_beam, int idx_sweep)
 {
     return idx_beam + idx_sweep * R_FANS_LINE32;
 }
 
-int get_idx_with_offset(int idx_beam, int idx_sweep, int num_sweep);
+int getIndexWithOffset(int idx_beam, int idx_sweep, int num_sweep);
 
-pcl::PointXYZI transform_pt(pcl::PointXYZI pt,const double* dof);
+pcl::PointXYZI transformPoint(pcl::PointXYZI pt,const double* dof);
 
 } // namespace global_param
 

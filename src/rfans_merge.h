@@ -10,7 +10,7 @@ class RfansMerge
 
     void merge();
 
-    inline cloudPtr merge_cloud() const {return _cloud_merge;}
+    inline cloudPtr getMergeCloud() const {return _cloud_merge;}
 
   private:
     cloudPtr _cloud_data_16l;

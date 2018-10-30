@@ -7,7 +7,9 @@
 
 
 <!-- -->
-<node pkg="rfans_merge" type="rfans_merge_node" name="rfans_merge_node" />
+<node pkg="rfans_merge" type="rfans_merge_node" name="rfans_merge_node" >
+  <param name="dof6" value="0.0,0.0,0.0,0.0,0.0,180.0" />
+</node>
 
 
 <node pkg="rviz" type="rviz" name="rviz" args="-d $(find rfans_merge)/merge_result.rviz" required="true" />

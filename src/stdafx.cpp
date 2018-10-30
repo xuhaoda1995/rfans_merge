@@ -10,7 +10,7 @@ const int OFFSET_IDX16[2]={0,1};
 
 const double g_LiDAR_pos32[6] = {0, 1.3, 2.99, 2.12, 0.55, 180.0};
 const double g_LiDAR_pos16[6] = {0, 1.3, 2.99, 2.12, 0.55, 0.0};
-const double g_LiDAR_16_2_32[6] = {0, 0, 0, 0, 0, 180.0};
+double g_LiDAR_16_2_32[6] = {0, 0, 0, 0, 0, 180.0};
 
 const float laser_vangle32[32]={
    -20.5, -19.5, -18.5, -17.5,
@@ -22,15 +22,15 @@ const float laser_vangle32[32]={
     3.5,   4.5,   5.5,   6.5,
     7.5,   8.5,   9.5,   10.5};
 
-int global_param::get_idx_with_offset(int idx_beam, int idx_sweep, int num_sweep)
+int global_param::getIndexWithOffset(int idx_beam, int idx_sweep, int num_sweep)
 {
     int idx = idx_sweep + OFFSET_IDX32[idx_beam % 4];
     if (idx >= num_sweep)
         idx -= num_sweep;
-    return get_idx(idx_beam, idx);
+    return getCloudIndex(idx_beam, idx);
 }
 
-pcl::PointXYZI global_param::transform_pt(pcl::PointXYZI pt,const double* dof)
+pcl::PointXYZI global_param::transformPoint(pcl::PointXYZI pt,const double* dof)
 {
     double pitchR = dof[3] * M_PI / 180;
     double rollR = dof[4] * M_PI / 180;

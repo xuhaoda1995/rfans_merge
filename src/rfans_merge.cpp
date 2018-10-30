@@ -12,7 +12,7 @@ void RfansMerge::merge()
 {
     for(auto pt : _cloud_data_16l->points)
     {
-        auto pt_trans=global_param::transform_pt(pt,g_LiDAR_16_2_32);
+        auto pt_trans=global_param::transformPoint(pt,g_LiDAR_16_2_32);
         _cloud_merge->push_back(pt_trans);
     }
     *_cloud_merge+=*_cloud_data_32l;

@@ -12,7 +12,7 @@ cloudPtr g_cloud_16l;
 boost::mutex cloud_mutex32;
 boost::mutex cloud_mutex16;
 
-void cloud_cb_16l(const sensor_msgs::PointCloud2ConstPtr &input)
+void cloudCallback16L(const sensor_msgs::PointCloud2ConstPtr &input)
 {
     //transfer msg to PointCloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_data(new pcl::PointCloud<pcl::PointXYZI>);
@@ -34,7 +34,7 @@ void cloud_cb_16l(const sensor_msgs::PointCloud2ConstPtr &input)
     g_cloud_16l = cloud_data;
 }
 
-void cloud_cb_32l(const sensor_msgs::PointCloud2ConstPtr &input)
+void cloudCallback32L(const sensor_msgs::PointCloud2ConstPtr &input)
 {
     //transfer msg to PointCloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_data(new pcl::PointCloud<pcl::PointXYZI>);
@@ -56,18 +56,32 @@ void cloud_cb_32l(const sensor_msgs::PointCloud2ConstPtr &input)
     g_cloud_32l = cloud_data;
 }
 
+void getParam(ros::NodeHandle nh)
+{
+    // std::string node_name = ros::this_node::getName();
+    std::vector<double> dof6 = {0.0, 0.0, 0.0, 0.0, 0.0, 180.0};
+    nh.param<std::vector<double>>("dof6", dof6, {0, 0, 0, 0, 0, 180.0});
+    // ros::param::get(node_name + "/dof6", dof6);
+    ROS_INFO("dof6: %lf ",dof6[5]);
+    for (int i = 0; i < 6; i++)
+    {
+        g_LiDAR_16_2_32[i] = dof6[i];
+    }
+}
+
 int main(int argc, char **argv)
 {
     // Initialize ROS
     ros::init(argc, argv, "rfans_merge_node");
     ros::NodeHandle nh;
+    ros::NodeHandle nh1("~");
 
     // Create a ROS subscriber for the input point cloud
-    ros::Subscriber sub1 = nh.subscribe("/ns1/rfans_driver/rfans_points", 1, cloud_cb_16l);
-    ros::Subscriber sub2 = nh.subscribe("/ns2/rfans_driver/rfans_points", 1, cloud_cb_32l);
+    ros::Subscriber sub1 = nh.subscribe("/ns1/rfans_driver/rfans_points", 1, cloudCallback16L);
+    ros::Subscriber sub2 = nh.subscribe("/ns2/rfans_driver/rfans_points", 1, cloudCallback32L);
 
     // Create a ROS publisher for the output point cloud
-    ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2>("/rfans_merge/out", 1);
+    ros::Publisher pub = nh1.advertise<sensor_msgs::PointCloud2>("out", 1);
 
     // // Spin
     // ros::spin();
@@ -91,14 +105,16 @@ int main(int argc, char **argv)
         }
         if (cloud_16l && cloud_32l)
         {
+            getParam(nh1);
+
             RfansMerge rfans_merge(cloud_16l, cloud_32l);
-            int dtime=abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
-            if (dtime)
+            int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
+            // if (dtime)
             {
                 rfans_merge.merge();
             }
             sensor_msgs::PointCloud2 out;
-            pcl::toROSMsg(*(rfans_merge.merge_cloud()), out);
+            pcl::toROSMsg(*(rfans_merge.getMergeCloud()), out);
             out.header.frame_id = "world";
             pub.publish(out);
         }
@@ -106,5 +122,5 @@ int main(int argc, char **argv)
         loop_rate.sleep();
     }
 
-
+    return 0;
 }
