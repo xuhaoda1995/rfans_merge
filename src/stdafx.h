@@ -9,6 +9,9 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+typedef pcl::PointCloud<pcl::PointXYZI> cloud;
+typedef cloud::Ptr cloudPtr;
+typedef cloud::ConstPtr cloudConstPtr;
 
 extern const int R_FANS_LINE32;
 extern const int R_FANS_LINE16;
@@ -16,6 +19,10 @@ extern const int OFFSET_IDX32[4];
 extern const int OFFSET_IDX16[2];
 
 extern const float laser_vangle32[32];
+
+extern const double g_LiDAR_pos32[6];
+extern const double g_LiDAR_pos16[6];
+extern const double g_LiDAR_16_2_32[6];
 
 namespace global_param
 {
@@ -45,6 +52,7 @@ inline int get_idx(int idx_beam, int idx_sweep)
 
 int get_idx_with_offset(int idx_beam, int idx_sweep, int num_sweep);
 
+pcl::PointXYZI transform_pt(pcl::PointXYZI pt,const double* dof);
 
 } // namespace global_param
 
