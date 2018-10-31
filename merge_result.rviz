@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Cloud_merge
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Visualization Manager:
@@ -166,7 +166,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 14.516271591186523
+      Distance: 50.495582580566406
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -181,10 +181,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9497991800308228
+      Pitch: 0.7047994136810303
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.9222511053085327
+      Yaw: 1.6222513914108276
     Saved: ~
 Window Geometry:
   Displays:

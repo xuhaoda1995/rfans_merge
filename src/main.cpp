@@ -19,15 +19,23 @@ void cloudCallback16L(const sensor_msgs::PointCloud2ConstPtr &input)
     pcl::fromROSMsg(*input, *cloud_data);
 
     // Do data processing here...
-    auto time_now = pcl::getTime();
-    cloud_data->width = uint32_t(R_FANS_LINE16);
-    cloud_data->height = uint32_t(cloud_data->size() / R_FANS_LINE16);
-    if (cloud_data->size() % R_FANS_LINE16 != 0)
+    // auto time_now = pcl::getTime();
+    // cloud_data->width = uint32_t(R_FANS_LINE16);
+    // cloud_data->height = uint32_t(cloud_data->size() / R_FANS_LINE16);
+    // if (cloud_data->size() % R_FANS_LINE16 != 0)
+    // {
+    //     std::stringstream err_str;
+    //     err_str << "the line of rfans is not" << R_FANS_LINE16;
+    //     std::cout << err_str.str() << std::endl;
+    //     return;
+    // }
+    for(auto iter=cloud_data->points.begin();iter!=cloud_data->points.end();iter++)
     {
-        std::stringstream err_str;
-        err_str << "the line of rfans is not" << R_FANS_LINE16;
-        std::cout << err_str.str() << std::endl;
-        return;
+        if(isnan(iter->x)||isnan(iter->y)||isnan(iter->z))
+        {
+            cloud_data->erase(iter);
+            iter--;
+        }
     }
 
     boost::mutex::scoped_lock lock(cloud_mutex16);
@@ -41,15 +49,23 @@ void cloudCallback32L(const sensor_msgs::PointCloud2ConstPtr &input)
     pcl::fromROSMsg(*input, *cloud_data);
 
     // Do data processing here...
-    auto time_now = pcl::getTime();
-    cloud_data->width = uint32_t(R_FANS_LINE32);
-    cloud_data->height = uint32_t(cloud_data->size() / R_FANS_LINE32);
-    if (cloud_data->size() % R_FANS_LINE32 != 0)
+    // auto time_now = pcl::getTime();
+    // cloud_data->width = uint32_t(R_FANS_LINE32);
+    // cloud_data->height = uint32_t(cloud_data->size() / R_FANS_LINE32);
+    // if (cloud_data->size() % R_FANS_LINE32 != 0)
+    // {
+    //     std::stringstream err_str;
+    //     err_str << "the line of rfans is not" << R_FANS_LINE32;
+    //     std::cout << err_str.str() << std::endl;
+    //     return;
+    // }
+    for(auto iter=cloud_data->points.begin();iter!=cloud_data->points.end();iter++)
     {
-        std::stringstream err_str;
-        err_str << "the line of rfans is not" << R_FANS_LINE32;
-        std::cout << err_str.str() << std::endl;
-        return;
+        if(isnan(iter->x)||isnan(iter->y)||isnan(iter->z))
+        {
+            cloud_data->erase(iter);
+            iter--;
+        }
     }
 
     boost::mutex::scoped_lock lock(cloud_mutex32);
@@ -62,11 +78,12 @@ void getParam(ros::NodeHandle nh)
     std::vector<double> dof6 = {0.0, 0.0, 0.0, 0.0, 0.0, 180.0};
     nh.param<std::vector<double>>("dof6", dof6, {0, 0, 0, 0, 0, 180.0});
     // ros::param::get(node_name + "/dof6", dof6);
-    ROS_INFO("dof6: %lf ",dof6[5]);
+    
     for (int i = 0; i < 6; i++)
     {
         g_LiDAR_16_2_32[i] = dof6[i];
     }
+    ROS_INFO("yaw: %lf ",g_LiDAR_16_2_32[5]);
 }
 
 int main(int argc, char **argv)
@@ -110,9 +127,10 @@ int main(int argc, char **argv)
             RfansMerge rfans_merge(cloud_16l, cloud_32l);
             int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
             // if (dtime)
-            {
-                rfans_merge.merge();
-            }
+            // {
+            auto trans=rfans_merge.getTransformationByICP();
+            std::cout<<trans<<std::endl;
+            // }
             sensor_msgs::PointCloud2 out;
             pcl::toROSMsg(*(rfans_merge.getMergeCloud()), out);
             out.header.frame_id = "world";

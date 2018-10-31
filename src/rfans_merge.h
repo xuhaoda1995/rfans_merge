@@ -2,6 +2,7 @@
 #define RFANS_MERGE_H_
 
 #include "stdafx.h"
+#include <pcl/registration/icp.h>
 
 class RfansMerge
 {
@@ -11,6 +12,8 @@ class RfansMerge
     void merge();
 
     inline cloudPtr getMergeCloud() const {return _cloud_merge;}
+
+    Eigen::Matrix4f getTransformationByICP();
 
   private:
     cloudPtr _cloud_data_16l;
