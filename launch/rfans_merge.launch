@@ -8,7 +8,12 @@
 
 <!-- -->
 <node pkg="rfans_merge" type="rfans_merge_node" name="rfans_merge_node" >
-  <param name="dof6" value="0.0,0.0,0.0,0.0,0.0,180.0" />
+  <param name="x" value="0.0" />
+  <param name="y" value="0.0" />
+  <param name="z" value="0.0" />
+  <param name="pitch" value="0.0" />
+  <param name="roll" value="0.0" />
+  <param name="yaw" value="170.0" />
 </node>
 
 

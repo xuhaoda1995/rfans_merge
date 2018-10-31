@@ -29,9 +29,9 @@ void cloudCallback16L(const sensor_msgs::PointCloud2ConstPtr &input)
     //     std::cout << err_str.str() << std::endl;
     //     return;
     // }
-    for(auto iter=cloud_data->points.begin();iter!=cloud_data->points.end();iter++)
+    for (auto iter = cloud_data->points.begin(); iter != cloud_data->points.end(); iter++)
     {
-        if(isnan(iter->x)||isnan(iter->y)||isnan(iter->z))
+        if (isnan(iter->x) || isnan(iter->y) || isnan(iter->z))
         {
             cloud_data->erase(iter);
             iter--;
@@ -59,9 +59,9 @@ void cloudCallback32L(const sensor_msgs::PointCloud2ConstPtr &input)
     //     std::cout << err_str.str() << std::endl;
     //     return;
     // }
-    for(auto iter=cloud_data->points.begin();iter!=cloud_data->points.end();iter++)
+    for (auto iter = cloud_data->points.begin(); iter != cloud_data->points.end(); iter++)
     {
-        if(isnan(iter->x)||isnan(iter->y)||isnan(iter->z))
+        if (isnan(iter->x) || isnan(iter->y) || isnan(iter->z))
         {
             cloud_data->erase(iter);
             iter--;
@@ -74,16 +74,27 @@ void cloudCallback32L(const sensor_msgs::PointCloud2ConstPtr &input)
 
 void getParam(ros::NodeHandle nh)
 {
-    // std::string node_name = ros::this_node::getName();
-    std::vector<double> dof6 = {0.0, 0.0, 0.0, 0.0, 0.0, 180.0};
-    nh.param<std::vector<double>>("dof6", dof6, {0, 0, 0, 0, 0, 180.0});
-    // ros::param::get(node_name + "/dof6", dof6);
-    
-    for (int i = 0; i < 6; i++)
-    {
-        g_LiDAR_16_2_32[i] = dof6[i];
-    }
-    ROS_INFO("yaw: %lf ",g_LiDAR_16_2_32[5]);
+    double x, y, z, pitch_deg, roll_deg, yaw_deg;
+    nh.param<double>("x", x, 0.0);
+    g_LiDAR_16_2_32[0] = x;
+
+    nh.param<double>("y", y, 0.0);
+    g_LiDAR_16_2_32[1] = y;
+
+    nh.param<double>("z", z, 0.0);
+    g_LiDAR_16_2_32[2] = z;
+
+    nh.param<double>("pitch", pitch_deg, 0.0);
+    g_LiDAR_16_2_32[3] = pitch_deg;
+
+    nh.param<double>("roll", roll_deg, 0.0);
+    g_LiDAR_16_2_32[4] = roll_deg;
+
+    nh.param<double>("yaw", yaw_deg, 170.0);
+    g_LiDAR_16_2_32[5] = yaw_deg;
+
+    ROS_INFO("dof6: %lf,%lf,%lf,%lf,%lf,%lf ", g_LiDAR_16_2_32[0], g_LiDAR_16_2_32[1],
+             g_LiDAR_16_2_32[2], g_LiDAR_16_2_32[3], g_LiDAR_16_2_32[4], g_LiDAR_16_2_32[5]);
 }
 
 int main(int argc, char **argv)
@@ -128,9 +139,13 @@ int main(int argc, char **argv)
             int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
             // if (dtime)
             // {
-            auto trans=rfans_merge.getTransformationByICP();
-            std::cout<<trans<<std::endl;
+            // auto trans=rfans_merge.getTransformationByICP();
+            // auto rotation_matrix=trans.block<3,3>(0,0);
+            // auto euler_angles = rotation_matrix.eulerAngles ( 2,1,0 );
+            // std::cout<<euler_angles<<std::endl;
             // }
+            rfans_merge.merge();
+
             sensor_msgs::PointCloud2 out;
             pcl::toROSMsg(*(rfans_merge.getMergeCloud()), out);
             out.header.frame_id = "world";
