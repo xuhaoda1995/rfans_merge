@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "rfans_merge.h"
+#include "segment.h"
+#include "cloud_publisher.h"
 
 #include <pcl/io/pcd_io.h>
 #include <sstream>
@@ -74,27 +76,46 @@ void cloudCallback32L(const sensor_msgs::PointCloud2ConstPtr &input)
 
 void getParam(ros::NodeHandle nh)
 {
-    double x, y, z, pitch_deg, roll_deg, yaw_deg;
-    nh.param<double>("x", x, 0.0);
-    g_LiDAR_16_2_32[0] = x;
+    // double x, y, z, pitch_deg, roll_deg, yaw_deg;
+    // nh.param<double>("x", x, 0.0);
+    // g_LiDAR_16_2_32[0] = x;
 
-    nh.param<double>("y", y, 0.0);
-    g_LiDAR_16_2_32[1] = y;
+    // nh.param<double>("y", y, 0.0);
+    // g_LiDAR_16_2_32[1] = y;
 
-    nh.param<double>("z", z, 0.0);
-    g_LiDAR_16_2_32[2] = z;
+    // nh.param<double>("z", z, 0.0);
+    // g_LiDAR_16_2_32[2] = z;
 
-    nh.param<double>("pitch", pitch_deg, 0.0);
-    g_LiDAR_16_2_32[3] = pitch_deg;
+    // nh.param<double>("pitch", pitch_deg, 0.0);
+    // g_LiDAR_16_2_32[3] = pitch_deg;
 
-    nh.param<double>("roll", roll_deg, 0.0);
-    g_LiDAR_16_2_32[4] = roll_deg;
+    // nh.param<double>("roll", roll_deg, 0.0);
+    // g_LiDAR_16_2_32[4] = roll_deg;
 
-    nh.param<double>("yaw", yaw_deg, 170.0);
-    g_LiDAR_16_2_32[5] = yaw_deg;
+    // nh.param<double>("yaw", yaw_deg, 170.0);
+    // g_LiDAR_16_2_32[5] = yaw_deg;
 
-    ROS_INFO("dof6: %lf,%lf,%lf,%lf,%lf,%lf ", g_LiDAR_16_2_32[0], g_LiDAR_16_2_32[1],
-             g_LiDAR_16_2_32[2], g_LiDAR_16_2_32[3], g_LiDAR_16_2_32[4], g_LiDAR_16_2_32[5]);
+    // ROS_INFO("dof6: %lf,%lf,%lf,%lf,%lf,%lf ", g_LiDAR_16_2_32[0], g_LiDAR_16_2_32[1],
+    //          g_LiDAR_16_2_32[2], g_LiDAR_16_2_32[3], g_LiDAR_16_2_32[4], g_LiDAR_16_2_32[5]);
+
+    double x16,y16,z16;
+    nh.param<double>("x16", x16, 0.0);
+    g_LiDAR_pos16[0] = x16;
+
+    nh.param<double>("y16", y16, 0.0);
+    g_LiDAR_pos16[1] = y16;
+
+    nh.param<double>("z16", z16, 0.0);
+    g_LiDAR_pos16[2] = z16;
+
+    // nh.param<double>("x32", x32, 0.0);
+    // g_LiDAR_pos32[0] = x32;
+
+    // nh.param<double>("y32", y32, 0.0);
+    // g_LiDAR_pos32[1] = y32;
+
+    // nh.param<double>("z32", z32, 0);
+    // g_LiDAR_pos32[2] = z32;
 }
 
 int main(int argc, char **argv)
@@ -102,14 +123,15 @@ int main(int argc, char **argv)
     // Initialize ROS
     ros::init(argc, argv, "rfans_merge_node");
     ros::NodeHandle nh;
-    ros::NodeHandle nh1("~");
+    ros::NodeHandle nh_private("~");
 
     // Create a ROS subscriber for the input point cloud
     ros::Subscriber sub1 = nh.subscribe("/ns1/rfans_driver/rfans_points", 1, cloudCallback16L);
     ros::Subscriber sub2 = nh.subscribe("/ns2/rfans_driver/rfans_points", 1, cloudCallback32L);
 
     // Create a ROS publisher for the output point cloud
-    ros::Publisher pub = nh1.advertise<sensor_msgs::PointCloud2>("out", 1);
+    // ros::Publisher pub = nh1.advertise<sensor_msgs::PointCloud2>("out", 1);
+    CloudPublisher::init_pub(nh_private);
 
     // // Spin
     // ros::spin();
@@ -132,11 +154,12 @@ int main(int argc, char **argv)
             cloud_mutex32.unlock();
         }
         if (cloud_16l && cloud_32l)
+        // if (cloud_32l)
         {
-            getParam(nh1);
+            getParam(nh_private);
 
             RfansMerge rfans_merge(cloud_16l, cloud_32l);
-            int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
+            // int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
             // if (dtime)
             // {
             // auto trans=rfans_merge.getTransformationByICP();
@@ -145,11 +168,12 @@ int main(int argc, char **argv)
             // std::cout<<euler_angles<<std::endl;
             // }
             rfans_merge.merge();
+            CloudPublisher::all_publish(rfans_merge.trans_cloud_16_,rfans_merge.trans_cloud_32_);
 
-            sensor_msgs::PointCloud2 out;
-            pcl::toROSMsg(*(rfans_merge.getMergeCloud()), out);
-            out.header.frame_id = "world";
-            pub.publish(out);
+            // Segmentation segmentation(cloud_32l);
+            // segmentation.segmentAllPlanes();
+
+            // CloudPublisher::all_publish(segmentation.getSegmentPoints(),cloud_32l);
         }
         ros::spinOnce();
         loop_rate.sleep();

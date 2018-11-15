@@ -3,17 +3,17 @@
 <launch>
 
 
-<arg name="bag_path" value="/home/howstar/pclData/rfans_double2.bag" />
+<arg name="bag_path" value="/home/howstar/data/rfans_data/corridor1_double.bag" />
 
 
 <!-- -->
 <node pkg="rfans_merge" type="rfans_merge_node" name="rfans_merge_node" >
-  <param name="x" value="0.0" />
-  <param name="y" value="0.0" />
-  <param name="z" value="0.0" />
-  <param name="pitch" value="0.0" />
-  <param name="roll" value="0.0" />
-  <param name="yaw" value="170.0" />
+  <param name="x16" value="0.0" />
+  <param name="y16" value="0.0" />
+  <param name="z16" value="0.0" />
+  <param name="x32" value="0.0" />
+  <param name="y32" value="0.0" />
+  <param name="z32" value="0.0" />
 </node>
 
 

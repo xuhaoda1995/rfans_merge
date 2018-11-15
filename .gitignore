@@ -33,4 +33,5 @@
 
 # Other
 src/.vscode/
+src/build/
 build/

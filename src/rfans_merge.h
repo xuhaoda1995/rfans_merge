@@ -15,10 +15,15 @@ class RfansMerge
 
     Eigen::Matrix4f getTransformationByICP();
 
+
+    cloudPtr trans_cloud_16_;
+    cloudPtr trans_cloud_32_;
+    
   private:
     cloudPtr _cloud_data_16l;
     cloudPtr _cloud_data_32l;
     cloudPtr _cloud_merge;
+
 };
 
 #endif
