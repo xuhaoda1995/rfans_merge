@@ -2,12 +2,15 @@
 #include "rfans_merge.h"
 #include "segment.h"
 #include "cloud_publisher.h"
+#include "PlaneExtractionBySeed.h"
 
 #include <pcl/io/pcd_io.h>
 #include <sstream>
 #include <pcl/common/time.h>
+#include <fstream>
 
-using namespace global_param;
+using namespace global_utility;
+using namespace std;
 
 cloudPtr g_cloud_32l;
 cloudPtr g_cloud_16l;
@@ -76,37 +79,37 @@ void cloudCallback32L(const sensor_msgs::PointCloud2ConstPtr &input)
 
 void getParam(ros::NodeHandle nh)
 {
-    // double x, y, z, pitch_deg, roll_deg, yaw_deg;
-    // nh.param<double>("x", x, 0.0);
-    // g_LiDAR_16_2_32[0] = x;
+    double x, y, z, pitch_deg, roll_deg, yaw_deg;
+    nh.param<double>("x", x, 0.0);
+    g_LiDAR_pos16[0] = x;
 
-    // nh.param<double>("y", y, 0.0);
-    // g_LiDAR_16_2_32[1] = y;
+    nh.param<double>("y", y, 0.0);
+    g_LiDAR_pos16[1] = y;
 
-    // nh.param<double>("z", z, 0.0);
-    // g_LiDAR_16_2_32[2] = z;
+    nh.param<double>("z", z, 0.0);
+    g_LiDAR_pos16[2] = z;
 
-    // nh.param<double>("pitch", pitch_deg, 0.0);
-    // g_LiDAR_16_2_32[3] = pitch_deg;
+    nh.param<double>("pitch", pitch_deg, 0.0);
+    g_LiDAR_pos16[3] = pitch_deg;
 
-    // nh.param<double>("roll", roll_deg, 0.0);
-    // g_LiDAR_16_2_32[4] = roll_deg;
+    nh.param<double>("roll", roll_deg, 0.0);
+    g_LiDAR_pos16[4] = roll_deg;
 
-    // nh.param<double>("yaw", yaw_deg, 170.0);
-    // g_LiDAR_16_2_32[5] = yaw_deg;
+    nh.param<double>("yaw", yaw_deg, 170.0);
+    g_LiDAR_pos16[5] = yaw_deg;
 
     // ROS_INFO("dof6: %lf,%lf,%lf,%lf,%lf,%lf ", g_LiDAR_16_2_32[0], g_LiDAR_16_2_32[1],
     //          g_LiDAR_16_2_32[2], g_LiDAR_16_2_32[3], g_LiDAR_16_2_32[4], g_LiDAR_16_2_32[5]);
 
-    double x16,y16,z16;
-    nh.param<double>("x16", x16, 0.0);
-    g_LiDAR_pos16[0] = x16;
+    // double x16,y16,z16;
+    // nh.param<double>("x16", x16, 0.0);
+    // g_LiDAR_pos16[0] = x16;
 
-    nh.param<double>("y16", y16, 0.0);
-    g_LiDAR_pos16[1] = y16;
+    // nh.param<double>("y16", y16, 0.0);
+    // g_LiDAR_pos16[1] = y16;
 
-    nh.param<double>("z16", z16, 0.0);
-    g_LiDAR_pos16[2] = z16;
+    // nh.param<double>("z16", z16, 0.0);
+    // g_LiDAR_pos16[2] = z16;
 
     // nh.param<double>("x32", x32, 0.0);
     // g_LiDAR_pos32[0] = x32;
@@ -116,6 +119,61 @@ void getParam(ros::NodeHandle nh)
 
     // nh.param<double>("z32", z32, 0);
     // g_LiDAR_pos32[2] = z32;
+}
+
+void savePoints(cloudPtr cloud_16l, cloudPtr cloud_32l, int frame_num)
+{
+    char* cwd = NULL;
+    cwd = getcwd(NULL,0);
+
+    const char *path16 = "bkth16l";
+    int mode_all = S_IRWXU | S_IRWXG | S_IRWXO;
+    mkdir(path16, mode_all);
+    chdir(path16);
+    std::stringstream ss;
+    ss << frame_num << "_line";
+    std::string str;
+    ss >> str;
+    if (mkdir(str.c_str(), mode_all) == 0)
+    {
+        for (int i = 0; i < cloud_16l->size(); i++)
+        {
+            int idx = i % 16;
+            std::stringstream ss1;
+            ss1 << str << "/" << str << "_" << idx << ".txt";
+            std::string str1;
+            ss1 >> str1;
+            ofstream file(str1,ios::app);
+            file << cloud_16l->points[i].x << " "
+                 << cloud_16l->points[i].y << " "
+                 << cloud_16l->points[i].z << endl;
+            file.close();
+        }
+    }
+
+    const char *path32 = "bkth32l";
+
+    chdir(cwd);
+    mkdir(path32, mode_all);
+    chdir(path32);
+    if (mkdir(str.c_str(), mode_all) == 0)
+    {
+        for (int i = 0; i < cloud_32l->size(); i++)
+        {
+            int idx = i % 32;
+            std::stringstream ss1;
+            ss1 << str << "/" << str << "_" << idx << ".txt";
+            std::string str1;
+            ss1 >> str1;
+            ofstream file(str1,ios::app);
+            file << cloud_32l->points[i].x << " "
+                 << cloud_32l->points[i].y << " "
+                 << cloud_32l->points[i].z << endl;
+            file.close();
+        }
+    }
+    chdir(cwd);
+    free(cwd);
 }
 
 int main(int argc, char **argv)
@@ -136,7 +194,8 @@ int main(int argc, char **argv)
     // // Spin
     // ros::spin();
 
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(50);
+    // int frame_num = 0;
 
     while (ros::ok())
     {
@@ -153,12 +212,16 @@ int main(int argc, char **argv)
             cloud_32l.swap(g_cloud_32l);
             cloud_mutex32.unlock();
         }
-        if (cloud_16l && cloud_32l)
-        // if (cloud_32l)
+        // if (cloud_16l && cloud_32l)
+        if (cloud_32l)
         {
+            // frame_num++;
+            // savePoints(cloud_16l, cloud_32l, frame_num);
+
             getParam(nh_private);
 
-            RfansMerge rfans_merge(cloud_16l, cloud_32l);
+            ros::Time t1=ros::Time::now();
+            // RfansMerge rfans_merge(cloud_16l, cloud_32l);
             // int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
             // if (dtime)
             // {
@@ -167,13 +230,21 @@ int main(int argc, char **argv)
             // auto euler_angles = rotation_matrix.eulerAngles ( 2,1,0 );
             // std::cout<<euler_angles<<std::endl;
             // }
-            rfans_merge.merge();
-            CloudPublisher::all_publish(rfans_merge.trans_cloud_16_,rfans_merge.trans_cloud_32_);
+            // rfans_merge.merge();
+            // cout<<"merge time is "<<ros::Time::now()-t1<<endl;
+
+            // CloudPublisher::all_publish(rfans_merge.trans_cloud_16_, rfans_merge.trans_cloud_32_);
+
 
             // Segmentation segmentation(cloud_32l);
             // segmentation.segmentAllPlanes();
 
             // CloudPublisher::all_publish(segmentation.getSegmentPoints(),cloud_32l);
+
+            PlaneExtractionBySeed planeExtraction(cloud_32l,32);
+            planeExtraction.segmentAllPlanes();
+
+            CloudPublisher::all_publish(planeExtraction.getPlaneCloud(),cloud_32l);
         }
         ros::spinOnce();
         loop_rate.sleep();

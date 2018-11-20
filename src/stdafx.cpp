@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-// using namespace global_param;
+// using namespace global_utility;
 
 const int R_FANS_LINE32 = 32;
 const int R_FANS_LINE16 = 16;
@@ -8,8 +8,8 @@ const int R_FANS_LINE16 = 16;
 const int OFFSET_IDX32[4] = {0, 55, 14, 70};
 const int OFFSET_IDX16[2] = {0, 1};
 
-double g_LiDAR_pos32[6] = {0, 0, 0, 0.38, 0.71, 251.26};
-double g_LiDAR_pos16[6] = {0, 0, 0, -30.6331, 2.4624, 0.72};
+double g_LiDAR_pos32[6] = {0, 0, 0, 1.1381, -0.9036, -77.0832};
+double g_LiDAR_pos16[6] = {0, 0, 0, 21.23, -2.1647, 174.5744};
 double g_LiDAR_16_2_32[6] = {0, 0, 0, 0, 0, 180.0};
 
 const float laser_vangle32[32] = {
@@ -22,21 +22,23 @@ const float laser_vangle32[32] = {
     3.5, 4.5, 5.5, 6.5,
     7.5, 8.5, 9.5, 10.5};
 
-int global_param::getIndexWithOffset(int idx_beam, int idx_sweep, int num_beam, int num_sweep)
+int global_utility::getIndexWithOffset(int idx_beam, int idx_sweep, int num_beam, int num_sweep)
 {
-    int idx = idx_sweep + OFFSET_IDX16[idx_beam % 4];
+    int idx = 0;
     switch (num_beam)
     {
     case 16:
     {
-        if (idx >= num_sweep)
-            idx -= num_sweep;
+        idx = idx_sweep + OFFSET_IDX16[idx_beam % 2];
+        idx = (idx + num_sweep) % num_sweep;
+
         return getCloudIndex(idx_beam, idx, num_beam);
     }
     case 32:
     {
-        if (idx >= num_sweep)
-            idx -= num_sweep;
+        idx = idx_sweep + OFFSET_IDX32[idx_beam % 4];
+        idx = (idx + num_sweep) % num_sweep;
+
         return getCloudIndex(idx_beam, idx, num_beam);
     }
     default:
@@ -46,7 +48,7 @@ int global_param::getIndexWithOffset(int idx_beam, int idx_sweep, int num_beam, 
     }
 }
 
-pcl::PointXYZI global_param::transformPoint(pcl::PointXYZI pt, const double *dof)
+pcl::PointXYZI global_utility::transformPoint(pcl::PointXYZI pt, const double *dof)
 {
     double pitchR = dof[3] * M_PI / 180;
     double rollR = dof[4] * M_PI / 180;
@@ -55,7 +57,7 @@ pcl::PointXYZI global_param::transformPoint(pcl::PointXYZI pt, const double *dof
     double dy = dof[1];
     double dz = dof[2];
 
-    pcl::PointXYZI out1,out2,out3;
+    pcl::PointXYZI out1, out2, out3;
 
     out1.y = pt.y * cos(pitchR) - pt.z * sin(pitchR);
     out1.z = pt.y * sin(pitchR) + pt.z * cos(pitchR);
@@ -74,4 +76,58 @@ pcl::PointXYZI global_param::transformPoint(pcl::PointXYZI pt, const double *dof
     out3.z += dz;
 
     return out3;
+}
+
+bool getCoeffientOfPlane(cloudPtr plane, std::vector<float> coeffs)
+{
+    if(plane->size() == 0)
+    {
+        return false;
+    }
+
+    //decentroid
+    pcl::PointXYZI mean;
+    for (auto pt : plane->points)
+    {
+        mean.x += pt.x;
+        mean.y += pt.y;
+        mean.z += pt.z;
+    }
+
+    mean.x /= plane->size();
+    mean.y /= plane->size();
+    mean.z /= plane->size();
+
+    std::vector<float> vec;
+
+    for (auto pt : plane->points)
+    {
+        // pt.x -= mean.x;
+        // pt.y -= mean.y;
+        // pt.z -= mean.z;
+        
+        vec.push_back(pt.x-mean.x);
+        vec.push_back(pt.y-mean.y);
+        vec.push_back(pt.z-mean.z);
+
+    }
+    ///////////////////////////////////////
+
+    // std::vector<std::vector<float>> vec{{0.68f, 0.597f}, {-0.211f, 0.823f}, {0.566f, -0.605f}};
+    int rows=plane->size();
+    const int cols{3};
+    
+    Eigen::Map<Eigen::Matrix<float, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> m(vec.data(), rows, cols);
+
+    Eigen::JacobiSVD<Eigen::MatrixXf> svd(m, Eigen::ComputeFullV | Eigen::ComputeFullU); // ComputeThinU | ComputeThinV
+    Eigen::MatrixXf singular_values = svd.singularValues();
+    Eigen::MatrixXf left_singular_vectors = svd.matrixU();
+    Eigen::MatrixXf V = svd.matrixV();
+
+    coeffs.clear();
+    coeffs.push_back(V(0,2));
+    coeffs.push_back(V(1,2));
+    coeffs.push_back(V(2,2));
+
+    return true;
 }

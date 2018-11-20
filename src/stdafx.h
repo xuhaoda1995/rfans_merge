@@ -9,6 +9,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+#include <vector>
+
 typedef pcl::PointCloud<pcl::PointXYZI> Cloud;
 typedef Cloud::Ptr cloudPtr;
 typedef Cloud::ConstPtr cloudConstPtr;
@@ -35,7 +37,7 @@ struct PlaneSegment
   cloudPtr plane;
 };
 
-namespace global_param
+namespace global_utility
 {
 
 struct PointSrc
@@ -65,6 +67,10 @@ int getIndexWithOffset(int idx_beam, int idx_sweep, int num_beam, int num_sweep)
 
 pcl::PointXYZI transformPoint(pcl::PointXYZI pt, const double* dof);
 
-} // namespace global_param
+
+} // namespace global_utility
+
+bool getCoeffientOfPlane(cloudPtr plane, std::vector<float> coeffs);
+
 
 #endif

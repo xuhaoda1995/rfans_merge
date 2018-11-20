@@ -14,22 +14,22 @@ void RfansMerge::merge()
 {
     // for(auto pt : _cloud_data_16l->points)
     // {
-    //     auto pt_trans=global_param::transformPoint(pt,g_LiDAR_16_2_32);
+    //     auto pt_trans=global_utility::transformPoint(pt,g_LiDAR_16_2_32);
     //     _cloud_merge->push_back(pt_trans);
     // }
     // *_cloud_merge+=*_cloud_data_32l;
 
 	for(auto pt : _cloud_data_16l->points)
     {
-        auto pt_trans=global_param::transformPoint(pt,g_LiDAR_pos16);
-        pt_trans.intensity=10.0/255;
+        auto pt_trans=global_utility::transformPoint(pt,g_LiDAR_pos16);
+        pt_trans.intensity=40;
         _cloud_merge->push_back(pt_trans);
         trans_cloud_16_->push_back(pt_trans);
     }
 	for(auto pt : _cloud_data_32l->points)
     {
-        auto pt_trans=global_param::transformPoint(pt,g_LiDAR_pos32);
-        pt_trans.intensity=20.0/255;
+        auto pt_trans=global_utility::transformPoint(pt,g_LiDAR_pos32);
+        pt_trans.intensity=140;
         _cloud_merge->push_back(pt_trans);
         trans_cloud_32_->push_back(pt_trans);
     }

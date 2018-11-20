@@ -6,38 +6,42 @@
 
 class PlaneExtractionBySeed
 {
-public:
-	PlaneExtractionBySeed(const cloudPtr & cloud, int num_beam);
+  public:
+	PlaneExtractionBySeed(const cloudPtr &cloud, int num_beam);
 	~PlaneExtractionBySeed();
 
 	int segmentAllPlanes();
 
-private:
+	cloudPtr getPlaneCloud() const { return cloud_plane_; };
 
-	bool extractRoadPtsBySeed(cloudPtr &plane, std::vector<float> &coeffs, cloudPtr &cloud_residue);
+  private:
+	bool extractRoadPtsBySeed(cloudPtr &plane, std::vector<float> &coeffs);
 
 	cloudPtr cloud_;
 
-	int num_face_;
+	int num_sweep_;
 	int num_beam_;
+	//the number of points which are not plane points
+	int num_residue_;
 
-	std::stack<std::pair<int, int> > st_road_;
-	cloudPtr road_;
-	std::vector<std::vector<int> > container_;
+	std::stack<std::pair<int, int>> st_road_;
+	//cloudPtr cloud_plane_;
+	std::vector<std::vector<int>> container_;
 
 	cloudPtr cloud_plane_;
 	std::vector<PlaneSegment> planes_;
 
-	void pushStack(int idxFace, int idxBeam);
-	void pushStackInit();
-	void pushStackRange(int idxFaceLeft, int idxFaceRight, int idxBeam);
+	void pushStack(int idxFace, int idxBeam, cloudPtr& cloud);
+	void pushStackInit(cloudPtr& cloud);
+	void pushStackRange(int idxFaceLeft, int idxFaceRight, int idxBeam, cloudPtr& cloud);
 
-	bool judgePlanePt(int idxFace,int idxBeam);
-	double getDistance(const pcl::PointXYZI& p1, const pcl::PointXYZI& p2);
+	bool judgePlanePt(int idxFace, int idxBeam, cloudPtr& cloud);
+	double getDistance(const pcl::PointXYZI &p1, const pcl::PointXYZI &p2);
+	double getAngle(const pcl::PointXYZI &p1, const pcl::PointXYZI &p2, const pcl::PointXYZI &p3);
 
-	bool isLine(const pcl::PointXYZI& p1, const pcl::PointXYZI& center, const pcl::PointXYZI& p2);
+	bool isLineVertical(const pcl::PointXYZI &p1, const pcl::PointXYZI &center, const pcl::PointXYZI &p2);
 
-	bool isLineHorizon(int idxFaceLeft,int idxFaceRight,int idxBeam);
+	bool isLineHorizon(int idxFaceLeft, int idxFaceRight, int idxBeam);
 };
 
 #endif
