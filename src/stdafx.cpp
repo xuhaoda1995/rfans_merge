@@ -78,7 +78,7 @@ pcl::PointXYZI global_utility::transformPoint(pcl::PointXYZI pt, const double *d
     return out3;
 }
 
-bool getCoeffientOfPlane(cloudPtr plane, std::vector<float> coeffs)
+bool getCoeffientOfPlane(cloudPtr plane, std::vector<float>& coeffs)
 {
     if(plane->size() == 0)
     {

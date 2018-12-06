@@ -17,7 +17,7 @@ cloudPtr g_cloud_16l;
 boost::mutex cloud_mutex32;
 boost::mutex cloud_mutex16;
 
-void cloudCallback16L(const sensor_msgs::PointCloud2ConstPtr &input)
+void cloudCallback16Left(const sensor_msgs::PointCloud2ConstPtr &input)
 {
     //transfer msg to PointCloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_data(new pcl::PointCloud<pcl::PointXYZI>);
@@ -47,7 +47,7 @@ void cloudCallback16L(const sensor_msgs::PointCloud2ConstPtr &input)
     g_cloud_16l = cloud_data;
 }
 
-void cloudCallback32L(const sensor_msgs::PointCloud2ConstPtr &input)
+void cloudCallback16Right(const sensor_msgs::PointCloud2ConstPtr &input)
 {
     //transfer msg to PointCloud
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_data(new pcl::PointCloud<pcl::PointXYZI>);
@@ -184,8 +184,8 @@ int main(int argc, char **argv)
     ros::NodeHandle nh_private("~");
 
     // Create a ROS subscriber for the input point cloud
-    ros::Subscriber sub1 = nh.subscribe("/ns1/rfans_driver/rfans_points", 1, cloudCallback16L);
-    ros::Subscriber sub2 = nh.subscribe("/ns2/rfans_driver/rfans_points", 1, cloudCallback32L);
+    ros::Subscriber sub1 = nh.subscribe("/ns1/rslidar_points", 1, cloudCallback16Left);
+    ros::Subscriber sub2 = nh.subscribe("/ns2/rslidar_points", 1, cloudCallback16Right);
 
     // Create a ROS publisher for the output point cloud
     // ros::Publisher pub = nh1.advertise<sensor_msgs::PointCloud2>("out", 1);
@@ -212,8 +212,8 @@ int main(int argc, char **argv)
             cloud_32l.swap(g_cloud_32l);
             cloud_mutex32.unlock();
         }
-        // if (cloud_16l && cloud_32l)
-        if (cloud_32l)
+        if (cloud_16l && cloud_32l)
+        //if (cloud_32l)
         {
             // frame_num++;
             // savePoints(cloud_16l, cloud_32l, frame_num);
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
             getParam(nh_private);
 
             ros::Time t1=ros::Time::now();
-            // RfansMerge rfans_merge(cloud_16l, cloud_32l);
+            RfansMerge rfans_merge(cloud_16l, cloud_32l);
             // int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
             // if (dtime)
             // {
@@ -230,10 +230,10 @@ int main(int argc, char **argv)
             // auto euler_angles = rotation_matrix.eulerAngles ( 2,1,0 );
             // std::cout<<euler_angles<<std::endl;
             // }
-            // rfans_merge.merge();
-            // cout<<"merge time is "<<ros::Time::now()-t1<<endl;
+            rfans_merge.merge();
+            cout<<"merge time is "<<ros::Time::now()-t1<<endl;
 
-            // CloudPublisher::all_publish(rfans_merge.trans_cloud_16_, rfans_merge.trans_cloud_32_);
+            CloudPublisher::all_publish(rfans_merge.trans_cloud_16(), rfans_merge.trans_cloud_32());
 
 
             // Segmentation segmentation(cloud_32l);
@@ -241,10 +241,10 @@ int main(int argc, char **argv)
 
             // CloudPublisher::all_publish(segmentation.getSegmentPoints(),cloud_32l);
 
-            PlaneExtractionBySeed planeExtraction(cloud_32l,32);
-            planeExtraction.segmentAllPlanes();
+            // PlaneExtractionBySeed planeExtraction(cloud_32l,32);
+            // planeExtraction.segmentAllPlanes();
 
-            CloudPublisher::all_publish(planeExtraction.getPlaneCloud(),cloud_32l);
+            // CloudPublisher::all_publish(planeExtraction.getPlaneCloud(),cloud_32l);
         }
         ros::spinOnce();
         loop_rate.sleep();
