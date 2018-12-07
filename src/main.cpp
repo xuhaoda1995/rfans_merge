@@ -9,6 +9,9 @@
 #include <pcl/common/time.h>
 #include <fstream>
 
+#include <dynamic_reconfigure/server.h>
+#include <rfans_merge/merge_Config.h>
+
 using namespace global_utility;
 using namespace std;
 
@@ -126,7 +129,7 @@ void savePoints(cloudPtr cloud_16l, cloudPtr cloud_32l, int frame_num)
     char* cwd = NULL;
     cwd = getcwd(NULL,0);
 
-    const char *path16 = "bkth16l";
+    const char *path16 = "rslidar_16l";
     int mode_all = S_IRWXU | S_IRWXG | S_IRWXO;
     mkdir(path16, mode_all);
     chdir(path16);
@@ -151,7 +154,7 @@ void savePoints(cloudPtr cloud_16l, cloudPtr cloud_32l, int frame_num)
         }
     }
 
-    const char *path32 = "bkth32l";
+    const char *path32 = "rslidar_32l";
 
     chdir(cwd);
     mkdir(path32, mode_all);
@@ -176,10 +179,39 @@ void savePoints(cloudPtr cloud_16l, cloudPtr cloud_32l, int frame_num)
     free(cwd);
 }
 
+void callback(rfans_merge::merge_Config &config, uint32_t level)
+{
+    ROS_INFO("Reconfigure Request: %d %d %d %d %d %d",
+             config.x_16,
+             config.y_16,
+             config.z_16,
+             config.pitch_16,
+             config.roll_16,
+             config.yaw_16);
+
+    g_LiDAR_pos16[0] = config.x_16;
+    g_LiDAR_pos16[1] = config.y_16;
+    g_LiDAR_pos16[2] = config.z_16;
+    g_LiDAR_pos16[3] = config.pitch_16;
+    g_LiDAR_pos16[4] = config.roll_16;
+    g_LiDAR_pos16[5] = config.yaw_16;
+
+    g_LiDAR_pos32[0] = config.x_32;
+    g_LiDAR_pos32[1] = config.y_32;
+    g_LiDAR_pos32[2] = config.z_32;
+    g_LiDAR_pos32[3] = config.pitch_32;
+    g_LiDAR_pos32[4] = config.roll_32;
+    g_LiDAR_pos32[5] = config.yaw_32;
+}
+
 int main(int argc, char **argv)
 {
     // Initialize ROS
     ros::init(argc, argv, "rfans_merge_node");
+    dynamic_reconfigure::Server<rfans_merge::merge_Config> server;
+    dynamic_reconfigure::Server<rfans_merge::merge_Config>::CallbackType fun_cb;
+    fun_cb = boost::bind(&callback, _1, _2);
+    server.setCallback(fun_cb);
     ros::NodeHandle nh;
     ros::NodeHandle nh_private("~");
 
