@@ -12,8 +12,11 @@
 #include <dynamic_reconfigure/server.h>
 #include <rfans_merge/merge_Config.h>
 
+#include <pcl/console/parse.h>
+
 using namespace global_utility;
 using namespace std;
+using namespace pcl::console;
 
 cloudPtr g_cloud_32l;
 cloudPtr g_cloud_16l;
@@ -80,50 +83,6 @@ void cloudCallback32L(const sensor_msgs::PointCloud2ConstPtr &input)
     g_cloud_32l = cloud_data;
 }
 
-void getParam(ros::NodeHandle nh)
-{
-    double x, y, z, pitch_deg, roll_deg, yaw_deg;
-    nh.param<double>("x", x, 0.0);
-    g_LiDAR_pos16[0] = x;
-
-    nh.param<double>("y", y, 0.0);
-    g_LiDAR_pos16[1] = y;
-
-    nh.param<double>("z", z, 0.0);
-    g_LiDAR_pos16[2] = z;
-
-    nh.param<double>("pitch", pitch_deg, 0.0);
-    g_LiDAR_pos16[3] = pitch_deg;
-
-    nh.param<double>("roll", roll_deg, 0.0);
-    g_LiDAR_pos16[4] = roll_deg;
-
-    nh.param<double>("yaw", yaw_deg, 170.0);
-    g_LiDAR_pos16[5] = yaw_deg;
-
-    // ROS_INFO("dof6: %lf,%lf,%lf,%lf,%lf,%lf ", g_LiDAR_16_2_32[0], g_LiDAR_16_2_32[1],
-    //          g_LiDAR_16_2_32[2], g_LiDAR_16_2_32[3], g_LiDAR_16_2_32[4], g_LiDAR_16_2_32[5]);
-
-    // double x16,y16,z16;
-    // nh.param<double>("x16", x16, 0.0);
-    // g_LiDAR_pos16[0] = x16;
-
-    // nh.param<double>("y16", y16, 0.0);
-    // g_LiDAR_pos16[1] = y16;
-
-    // nh.param<double>("z16", z16, 0.0);
-    // g_LiDAR_pos16[2] = z16;
-
-    // nh.param<double>("x32", x32, 0.0);
-    // g_LiDAR_pos32[0] = x32;
-
-    // nh.param<double>("y32", y32, 0.0);
-    // g_LiDAR_pos32[1] = y32;
-
-    // nh.param<double>("z32", z32, 0);
-    // g_LiDAR_pos32[2] = z32;
-}
-
 void savePoints(cloudPtr cloud_16l, cloudPtr cloud_32l, int frame_num)
 {
     char *cwd = NULL;
@@ -181,14 +140,6 @@ void savePoints(cloudPtr cloud_16l, cloudPtr cloud_32l, int frame_num)
 
 void callback(rfans_merge::merge_Config &config, uint32_t level)
 {
-    ROS_INFO("Reconfigure Request: %d %d %d %d %d %d",
-             config.x_16,
-             config.y_16,
-             config.z_16,
-             config.pitch_16,
-             config.roll_16,
-             config.yaw_16);
-
     g_LiDAR_pos16[0] = config.x_16;
     g_LiDAR_pos16[1] = config.y_16;
     g_LiDAR_pos16[2] = config.z_16;
@@ -204,16 +155,41 @@ void callback(rfans_merge::merge_Config &config, uint32_t level)
     g_LiDAR_pos32[5] = config.yaw_32;
 }
 
+void usage(char **argv)
+{
+	cout << "usage: " << argv[0]
+		 << " [-s] save two point as specific format"
+         << endl
+         << " [-h | --help] "
+		 << endl;
+	cout << argv[0] << " -h | --help : shows this help" << endl;
+	return;
+}
+
 int main(int argc, char **argv)
 {
     // Initialize ROS
     ros::init(argc, argv, "rfans_merge_node");
+    ros::NodeHandle nh;
+    ros::NodeHandle nh_private("~");
+
+    //Run dynamic parameter thread
     dynamic_reconfigure::Server<rfans_merge::merge_Config> server;
     dynamic_reconfigure::Server<rfans_merge::merge_Config>::CallbackType fun_cb;
     fun_cb = boost::bind(&callback, _1, _2);
     server.setCallback(fun_cb);
-    ros::NodeHandle nh;
-    ros::NodeHandle nh_private("~");
+
+    if (find_switch(argc, argv, "-h") ||
+		find_switch(argc, argv, "--help"))
+	{
+		usage(argv);
+		return (0);
+	}
+    bool savePath=false;
+    if(find_switch(argc,argv,"-s"))
+    {
+        savePath=true;
+    }
 
     // Create a ROS subscriber for the input point cloud
     ros::Subscriber sub1 = nh.subscribe("/ns1/rfans_driver/rfans_points", 1, cloudCallback16L);
@@ -223,11 +199,8 @@ int main(int argc, char **argv)
     // ros::Publisher pub = nh1.advertise<sensor_msgs::PointCloud2>("out", 1);
     CloudPublisher::init_pub(nh_private);
 
-    // // Spin
-    // ros::spin();
-
     ros::Rate loop_rate(50);
-    // int frame_num = 0;
+    int frame_num = 0;
 
     while (ros::ok())
     {
@@ -247,11 +220,6 @@ int main(int argc, char **argv)
         if (cloud_16l && cloud_32l)
         // if (cloud_32l)
         {
-            // frame_num++;
-            // savePoints(cloud_16l, cloud_32l, frame_num);
-
-            // getParam(nh_private);
-
             time_t gpsTime16 = cloud_16l->header.stamp & 0xffffffffl;
             time_t gpsTime32 = cloud_32l->header.stamp & 0xffffffffl;
 
@@ -267,16 +235,22 @@ int main(int argc, char **argv)
                 continue;
             }
 
+            if(savePath)
+            {
+                frame_num++;
+                savePoints(cloud_16l, cloud_32l, frame_num);
+                std::cout<<"have already save "<<frame_num<<" frame points"<<endl;
+                continue;
+            }
+
             ros::Time t1 = ros::Time::now();
             RfansMerge rfans_merge(cloud_16l, cloud_32l);
-            // int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
-            // if (dtime)
-            // {
+
             // auto trans=rfans_merge.getTransformationByICP();
             // auto rotation_matrix=trans.block<3,3>(0,0);
             // auto euler_angles = rotation_matrix.eulerAngles ( 2,1,0 );
             // std::cout<<euler_angles<<std::endl;
-            // }
+            
             rfans_merge.merge();
 
             CloudPublisher::all_publish(rfans_merge.trans_cloud_16_, rfans_merge.trans_cloud_32_);
