@@ -80,50 +80,6 @@ void cloudCallback16Right(const sensor_msgs::PointCloud2ConstPtr &input)
     g_cloud_32l = cloud_data;
 }
 
-void getParam(ros::NodeHandle nh)
-{
-    double x, y, z, pitch_deg, roll_deg, yaw_deg;
-    nh.param<double>("x", x, 0.0);
-    g_LiDAR_pos16[0] = x;
-
-    nh.param<double>("y", y, 0.0);
-    g_LiDAR_pos16[1] = y;
-
-    nh.param<double>("z", z, 0.0);
-    g_LiDAR_pos16[2] = z;
-
-    nh.param<double>("pitch", pitch_deg, 0.0);
-    g_LiDAR_pos16[3] = pitch_deg;
-
-    nh.param<double>("roll", roll_deg, 0.0);
-    g_LiDAR_pos16[4] = roll_deg;
-
-    nh.param<double>("yaw", yaw_deg, 170.0);
-    g_LiDAR_pos16[5] = yaw_deg;
-
-    // ROS_INFO("dof6: %lf,%lf,%lf,%lf,%lf,%lf ", g_LiDAR_16_2_32[0], g_LiDAR_16_2_32[1],
-    //          g_LiDAR_16_2_32[2], g_LiDAR_16_2_32[3], g_LiDAR_16_2_32[4], g_LiDAR_16_2_32[5]);
-
-    // double x16,y16,z16;
-    // nh.param<double>("x16", x16, 0.0);
-    // g_LiDAR_pos16[0] = x16;
-
-    // nh.param<double>("y16", y16, 0.0);
-    // g_LiDAR_pos16[1] = y16;
-
-    // nh.param<double>("z16", z16, 0.0);
-    // g_LiDAR_pos16[2] = z16;
-
-    // nh.param<double>("x32", x32, 0.0);
-    // g_LiDAR_pos32[0] = x32;
-
-    // nh.param<double>("y32", y32, 0.0);
-    // g_LiDAR_pos32[1] = y32;
-
-    // nh.param<double>("z32", z32, 0);
-    // g_LiDAR_pos32[2] = z32;
-}
-
 void savePoints(cloudPtr cloud_16l, cloudPtr cloud_32l, int frame_num)
 {
     char* cwd = NULL;
@@ -247,26 +203,13 @@ int main(int argc, char **argv)
         if (cloud_16l && cloud_32l)
         //if (cloud_32l)
         {
-            // frame_num++;
-            // savePoints(cloud_16l, cloud_32l, frame_num);
-
-            getParam(nh_private);
-
             ros::Time t1=ros::Time::now();
             RfansMerge rfans_merge(cloud_16l, cloud_32l);
-            // int dtime = abs((int)(cloud_16l->header.stamp - cloud_32l->header.stamp));
-            // if (dtime)
-            // {
-            // auto trans=rfans_merge.getTransformationByICP();
-            // auto rotation_matrix=trans.block<3,3>(0,0);
-            // auto euler_angles = rotation_matrix.eulerAngles ( 2,1,0 );
-            // std::cout<<euler_angles<<std::endl;
-            // }
+
             rfans_merge.merge();
             cout<<"merge time is "<<ros::Time::now()-t1<<endl;
 
             CloudPublisher::all_publish(rfans_merge.trans_cloud_16(), rfans_merge.trans_cloud_32());
-
 
             // Segmentation segmentation(cloud_32l);
             // segmentation.segmentAllPlanes();
